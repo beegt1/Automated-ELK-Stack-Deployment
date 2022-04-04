@@ -11,7 +11,6 @@ This document contains the following details:
 ### Description of the Topology
 This repository includes code defining the infrastructure below. 
 
-![](Images/Solved.png)
 
 The main purpose of this network is to expose a load-balanced and monitored instance of DVWA, the "D*mn Vulnerable Web Application"
 
@@ -61,19 +60,17 @@ A summary of the access policies in place can be found in the table below.
 
 Ansible was used to automate configuration of the ELK machine. No configuration was performed manually, which is advantageous because...
 
-- _TODO: What is the main advantage of automating configuration with Ansible?_
+Simple. Human readable automation. No special coding skills needed. Tasks executed in order. Get productive quickly.
+Powerful. App deployment. Configuration management. Workflow orchestration. Orchestrate the app lifecycle.
+Agentless. Agentless architecture. Uses OpenSSH and WinRM. No agents to exploit or update.
 
 The playbook implements the following tasks:
-- _TODO: In 3-5 bullets, explain the steps of the ELK installation play. E.g., install Docker; download image; etc._
-- ...
-- ...
+
 
 
 The following screenshot displays the result of running `docker ps` after successfully configuring the ELK instance.
 
 - _TODO_: Update the image file path with the name of your screenshot of docker ps output:
-
-  ![STUDENT TODO: Update image file path](Images/docker_ps_output.png)
 
 
 
@@ -81,57 +78,49 @@ The playbook is duplicated below.
 
 ```yaml
 ---
-# install_elk.yml
-- name: Configure Elk VM with Docker
-  hosts: elkservers
-  remote_user: elk
-  become: true
-  tasks:
-    # Use apt module
-    - name: Install docker.io
-      apt:
-        update_cache: yes
-        name: docker.io
+---
+  - name: elk server
+    hosts: elk
+    become: true
+    tasks:
+
+    - ansible.posix.sysctl:
+        name: vm.max_map_count
+        value: '262144'
         state: present
 
-      # Use apt module
-    - name: Install pip3
+    - name: Install docker.io (state=present is optional)
       apt:
-        force_apt_get: yes
+        name: docker.io
+        update_cache: yes
+        state: present
+
+    - name: Install python3-pip (state=present is optional)
+      apt:
         name: python3-pip
         state: present
 
-      # Use pip module
-    - name: Install Docker python module
+    - name: Install docker python
       pip:
         name: docker
         state: present
 
-      # Use command module
-    - name: Increase virtual memory
-      command: sysctl -w vm.max_map_count=262144
-
-      # Use sysctl module
-    - name: Use more memory
-      sysctl:
-        name: vm.max_map_count
-        value: "262144"
-        state: present
-        reload: yes
-
-      # Use docker_container module
-    - name: download and launch a docker elk container
+    - name: Create elk container
       docker_container:
         name: elk
         image: sebp/elk:761
         state: started
-        restart_policy: always
-        published_ports:
-          - 5601:5601
-          - 9200:9200
-          - 5044:5044
-```
+        restart: yes
+        ports:
+          - "5601:5601"
+          - "9200:9200"
+          - "5044:5044"
 
+    - name: Make sure docker is running
+      ansible.builtin.systemd:
+        state: started
+        name: docker
+        
 ### Target Machines & Beats
 This ELK server is configured to monitor the DVWA 1 and DVWA 2 VMs, at `10.0.0.5` and `10.0.0.6`, respectively.
 
